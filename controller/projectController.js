@@ -2,7 +2,11 @@ const project = require('../models/project');
 const user = require('../models/user');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-const redisClient = require('../config/redis');
+const {
+    getCache,
+    setCache,
+    deleteCache,
+} = require('../utils/redisCache');
 
 const createProject = catchAsync(async (req, res, next) => {
     const body = req.body;
@@ -21,9 +25,9 @@ const createProject = catchAsync(async (req, res, next) => {
         slag: body.slag,
     });
 
-    // Clear Redis Cache
     const cacheKey = `projects:${userId}`;
-    await redisClient.del(cacheKey);
+    await deleteCache(cacheKey);
+
     console.log(' Project cache cleared');
 
     return res.status(201).json({
@@ -37,8 +41,7 @@ const getAllProject = catchAsync(async (req, res, next) => {
 
     const cacheKey = `projects:${userId}`;
 
-    // Check Redis
-    const cacheData = await redisClient.get(cacheKey);
+    const cacheData = await getCache(cacheKey);
 
     if (cacheData) {
         console.log(' Data fetched from Redis');
@@ -46,11 +49,10 @@ const getAllProject = catchAsync(async (req, res, next) => {
         return res.json({
             status: 'success',
             source: 'redis',
-            data: JSON.parse(cacheData),
+            data: cacheData,
         });
     }
 
-    // Fetch from PostgreSQL
     const result = await project.findAll({
         where: {
             createdBy: userId,
@@ -65,12 +67,7 @@ const getAllProject = catchAsync(async (req, res, next) => {
         ],
     });
 
-    // Store in Redis for 60 seconds
-    await redisClient.setEx(
-        cacheKey,
-        60,
-        JSON.stringify(result)
-    );
+    await setCache(cacheKey, result);
 
     console.log(' Data fetched from PostgreSQL');
 
@@ -133,9 +130,9 @@ const updateProject = catchAsync(async (req, res, next) => {
 
     const updatedResult = await result.save();
 
-    // Clear Redis Cache
     const cacheKey = `projects:${userId}`;
-    await redisClient.del(cacheKey);
+    await deleteCache(cacheKey);
+
     console.log(' Project cache cleared');
 
     return res.json({
@@ -163,9 +160,9 @@ const deleteProject = catchAsync(async (req, res, next) => {
         force: true,
     });
 
-    // Clear Redis Cache
     const cacheKey = `projects:${userId}`;
-    await redisClient.del(cacheKey);
+    await deleteCache(cacheKey);
+
     console.log(' Project cache cleared');
 
     return res.json({
