@@ -11,6 +11,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controller/errorController');
 
 const sequelize = require('./config/database');
+const redisClient = require('./config/redis');
 
 const app = express();
 
@@ -37,15 +38,21 @@ app.use(globalErrorHandler);
 
 const PORT = process.env.APP_PORT || 4000;
 
-// Database Sync
-sequelize
-    .sync({alter:true} )
-    .then(() => {
-        console.log('Database synced');
+// Start Server
+(async () => {
+    try {
+        // Connect PostgreSQL
+        await sequelize.sync({ alter: true });
+        console.log(' Database synced');
+
+        // Connect Redis
+        await redisClient.connect();
+
+        // Start Express Server
         app.listen(PORT, () => {
-            console.log(`server up and running ${PORT}`);
+            console.log(` Server up and running on port ${PORT}`);
         });
-    })
-    .catch((err) => {
-        console.log('Database connection failed:', err);
-    });
+    } catch (err) {
+        console.error(' Error starting server:', err);
+    }
+})();

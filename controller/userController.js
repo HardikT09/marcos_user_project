@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+const { Op } = require('sequelize');
 const user = require('../models/user');
 const catchAsync = require('../utils/catchAsync');
 
@@ -9,12 +9,17 @@ const getAllUser = catchAsync(async (req, res, next) => {
                 [Op.ne]: '0',
             },
         },
-        attributes: { exclude: ['password'] },
+        attributes: {
+            exclude: ['password'],
+        },
     });
+
     return res.status(200).json({
         status: 'success',
-        data: user,
+        data: users,
     });
 });
 
-module.exports = { getAllUser };
+module.exports = {
+    getAllUser,
+};
