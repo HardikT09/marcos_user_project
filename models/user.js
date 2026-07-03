@@ -2,6 +2,7 @@
 const { DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 
+const upload = require('./upload');
 const sequelize = require('../config/database');
 const AppError = require('../utils/appError');
 const project = require('./project');
@@ -132,6 +133,14 @@ user.hasMany(project, {
 });
 
 project.belongsTo(user, {
+    foreignKey: 'createdBy',
+});
+
+user.hasMany(upload, {
+    foreignKey: 'createdBy',
+});
+
+upload.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 

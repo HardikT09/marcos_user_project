@@ -5,6 +5,7 @@ const express = require('express');
 const authRouter = require('./route/authRoute');
 const projectRouter = require('./route/projectRoute');
 const userRouter = require('./route/userRoute');
+const uploadRouter = require('./route/uploadRoute');
 
 const catchAsync = require('./utils/catchAsync');
 const AppError = require('./utils/appError');
@@ -19,9 +20,10 @@ const app = express();
 app.use(express.json());
 
 // Routes
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/project', projectRouter);
-app.use('/api/v1/user', userRouter);
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/project", projectRouter);
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/upload", uploadRouter);
 
 // Handle undefined routes
 app.use(
