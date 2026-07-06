@@ -43,17 +43,14 @@ app.use(globalErrorHandler);
 
 const PORT = process.env.APP_PORT || 4000;
 
-// Start Server
 (async () => {
     try {
-        // Connect PostgreSQL
+        
         await sequelize.sync({ alter: true });
         console.log(' Database synced');
-
-        // Connect Redis
+        
         await redisClient.connect();
 
-        // Start Express Server
         app.listen(PORT, () => {
             console.log(` Server up and running on port ${PORT}`);
         });

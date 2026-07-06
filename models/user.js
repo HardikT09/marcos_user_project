@@ -157,7 +157,7 @@ upload.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// Role ↔ User
+// Role to user
 role.hasMany(user, {
     foreignKey: 'roleId',
 });
