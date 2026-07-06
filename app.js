@@ -6,6 +6,7 @@ const authRouter = require('./route/authRoute');
 const projectRouter = require('./route/projectRoute');
 const userRouter = require('./route/userRoute');
 const uploadRouter = require('./route/uploadRoute');
+const roleRouter = require("./route/roleRoute");
 
 const catchAsync = require('./utils/catchAsync');
 const AppError = require('./utils/appError');
@@ -24,6 +25,8 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/project", projectRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/upload", uploadRouter);
+app.use("/api/v1/role", roleRouter);
+
 
 // Handle undefined routes
 app.use(

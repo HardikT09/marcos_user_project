@@ -1,11 +1,12 @@
-
 const { DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 
-const upload = require('./upload');
 const sequelize = require('../config/database');
 const AppError = require('../utils/appError');
+
 const project = require('./project');
+const upload = require('./upload');
+const role = require('./role');
 
 const user = sequelize.define(
     'user',
@@ -27,6 +28,15 @@ const user = sequelize.define(
                 notEmpty: {
                     msg: 'userType cannot be empty',
                 },
+            },
+        },
+
+        roleId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'role',
+                key: 'id',
             },
         },
 
@@ -128,6 +138,8 @@ const user = sequelize.define(
     }
 );
 
+
+// User to Project
 user.hasMany(project, {
     foreignKey: 'createdBy',
 });
@@ -136,12 +148,22 @@ project.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
+// User Upload
 user.hasMany(upload, {
     foreignKey: 'createdBy',
 });
 
 upload.belongsTo(user, {
     foreignKey: 'createdBy',
+});
+
+// Role ↔ User
+role.hasMany(user, {
+    foreignKey: 'roleId',
+});
+
+user.belongsTo(role, {
+    foreignKey: 'roleId',
 });
 
 module.exports = user;
