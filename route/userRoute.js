@@ -8,6 +8,7 @@ const {
 const {
     getAllUser,
     assignRole,
+    updateUserStatus,
 } = require("../controller/userController");
 
 // Get all users
@@ -19,5 +20,10 @@ router
 router
     .route("/:id/assign-role")
     .patch(authentication, assignRole);
+
+// Activate / Deactivate User
+router
+    .route("/:id/status")
+    .patch(authentication, updateUserStatus);
 
 module.exports = router;

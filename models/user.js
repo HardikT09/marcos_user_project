@@ -127,6 +127,12 @@ const user = sequelize.define(
             type: DataTypes.DATE,
         },
 
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+
         deletedAt: {
             type: DataTypes.DATE,
         },
@@ -138,8 +144,7 @@ const user = sequelize.define(
     }
 );
 
-
-// User to Project
+// User ↔ Project
 user.hasMany(project, {
     foreignKey: 'createdBy',
 });
@@ -148,7 +153,7 @@ project.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// User Upload
+// User ↔ Upload
 user.hasMany(upload, {
     foreignKey: 'createdBy',
 });
@@ -157,7 +162,7 @@ upload.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// Role to user
+// Role ↔ User
 role.hasMany(user, {
     foreignKey: 'roleId',
 });
