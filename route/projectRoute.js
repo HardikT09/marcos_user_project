@@ -1,4 +1,7 @@
-const { authentication, restrictTo } = require("../controller/authController");
+const {
+    authentication,
+    restrictToRole,
+} = require("../controller/authController");
 
 const {
     createProject,
@@ -11,22 +14,46 @@ const {
 
 const router = require("express").Router();
 
-// Project Manager
+// ================= PROJECT MANAGER =================
 router
     .route("/")
-    .post(authentication, restrictTo("2"), createProject)
-    .get(authentication, restrictTo("2"), getAllProject);
+    .post(
+        authentication,
+        restrictToRole("Project Manager"),
+        createProject
+    )
+    .get(
+        authentication,
+        restrictToRole("Project Manager"),
+        getAllProject
+    );
 
-// Admin - Get All Projects
+// ================= ADMIN =================
 router
     .route("/all")
-    .get(authentication, restrictTo("1"), getAllProjectsForAdmin);
+    .get(
+        authentication,
+        restrictToRole("Admin"),
+        getAllProjectsForAdmin
+    );
 
-// Project Manager - Single Project
+// ================= PROJECT MANAGER =================
 router
     .route("/:id")
-    .get(authentication, restrictTo("2"), getProjectById)
-    .patch(authentication, restrictTo("2"), updateProject)
-    .delete(authentication, restrictTo("2"), deleteProject);
+    .get(
+        authentication,
+        restrictToRole("Project Manager"),
+        getProjectById
+    )
+    .patch(
+        authentication,
+        restrictToRole("Project Manager"),
+        updateProject
+    )
+    .delete(
+        authentication,
+        restrictToRole("Project Manager"),
+        deleteProject
+    );
 
 module.exports = router;

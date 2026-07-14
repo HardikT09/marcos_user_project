@@ -1,6 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-module.exports = sequelize.define('project',
+
+module.exports = sequelize.define(
+    'project',
     {
         id: {
             allowNull: false,
@@ -8,6 +10,7 @@ module.exports = sequelize.define('project',
             primaryKey: true,
             type: DataTypes.INTEGER,
         },
+
         title: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -20,6 +23,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         isFeatured: {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
@@ -31,6 +35,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         productImage: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
@@ -40,6 +45,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         price: {
             type: DataTypes.DECIMAL,
             allowNull: false,
@@ -52,6 +58,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         shortDescription: {
             type: DataTypes.TEXT,
             allowNull: false,
@@ -64,6 +71,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         description: {
             type: DataTypes.TEXT,
             allowNull: false,
@@ -76,6 +84,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         productUrl: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -91,6 +100,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         category: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
@@ -100,6 +110,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         tags: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
@@ -109,6 +120,7 @@ module.exports = sequelize.define('project',
                 },
             },
         },
+
         createdBy: {
             type: DataTypes.INTEGER,
             references: {
@@ -116,14 +128,26 @@ module.exports = sequelize.define('project',
                 key: 'id',
             },
         },
+
+        updatedBy: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'user',
+                key: 'id',
+            },
+        },
+
         createdAt: {
             allowNull: false,
             type: DataTypes.DATE,
         },
+
         updatedAt: {
             allowNull: false,
             type: DataTypes.DATE,
         },
+
         slag: {
             allowNull: true,
             type: DataTypes.STRING,

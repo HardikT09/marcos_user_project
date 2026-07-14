@@ -2,7 +2,7 @@ const Role = require("../models/role");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
-// Create Role
+// ================= CREATE ROLE =================
 const createRole = catchAsync(async (req, res, next) => {
     let { roleName } = req.body;
 
@@ -32,7 +32,7 @@ const createRole = catchAsync(async (req, res, next) => {
     });
 });
 
-// Get All Roles
+// ================= GET ALL ROLES =================
 const getAllRoles = catchAsync(async (req, res) => {
     const roles = await Role.findAll({
         order: [["id", "ASC"]],
@@ -44,7 +44,7 @@ const getAllRoles = catchAsync(async (req, res) => {
     });
 });
 
-// Update Role
+// ================= UPDATE ROLE =================
 const updateRole = catchAsync(async (req, res, next) => {
     const role = await Role.findByPk(req.params.id);
 
@@ -59,6 +59,9 @@ const updateRole = catchAsync(async (req, res, next) => {
     if (req.body.isActive !== undefined) {
         role.isActive = req.body.isActive;
     }
+
+    // Save who updated the role
+    role.updatedBy = req.user.id;
 
     await role.save();
 

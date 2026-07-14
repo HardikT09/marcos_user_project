@@ -6,7 +6,7 @@ const upload = require("../middleware/uploadMiddleware");
 
 const {
     authentication,
-    restrictTo,
+    restrictToRole,
 } = require("../controller/authController");
 
 const {
@@ -19,7 +19,7 @@ router
     .route("/")
     .post(
         authentication,
-        restrictTo("2"),
+        restrictToRole("Project Manager"),
         (req, res, next) => {
             upload.single("file")(req, res, (err) => {
                 if (err instanceof multer.MulterError) {
@@ -41,12 +41,16 @@ router
         },
         uploadFile
     )
-    .get(authentication, restrictTo("2"), getAllUploads);
+    .get(
+        authentication,
+        restrictToRole("Project Manager"),
+        getAllUploads
+    );
 
 router.get(
     "/profile",
     authentication,
-    restrictTo("2"),
+    restrictToRole("Project Manager"),
     getProfile
 );
 

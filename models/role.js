@@ -32,6 +32,15 @@ module.exports = sequelize.define(
             defaultValue: true,
         },
 
+        updatedBy: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "user",
+                key: "id",
+            },
+        },
+
         createdAt: {
             allowNull: false,
             type: DataTypes.DATE,

@@ -2,7 +2,7 @@ const router = require("express").Router();
 
 const {
     authentication,
-    restrictTo,
+    restrictToRole,
 } = require("../controller/authController");
 
 const {
@@ -11,19 +11,34 @@ const {
     updateUserStatus,
 } = require("../controller/userController");
 
-// Get all users
+// ================= GET ALL USERS =================
+// Admin and Super Admin can view users
 router
     .route("/")
-    .get(authentication, getAllUser);
+    .get(
+        authentication,
+        restrictToRole("Admin", "Super Admin"),
+        getAllUser
+    );
 
-// Assign Role
+// ================= ASSIGN ROLE =================
+// Only Super Admin can assign roles
 router
     .route("/:id/assign-role")
-    .patch(authentication, assignRole);
+    .patch(
+        authentication,
+        restrictToRole("Super Admin"),
+        assignRole
+    );
 
-// Activate / Deactivate User
+// ================= ACTIVATE / DEACTIVATE USER =================
+// Only Super Admin can activate/deactivate users
 router
     .route("/:id/status")
-    .patch(authentication, updateUserStatus);
+    .patch(
+        authentication,
+        restrictToRole("Super Admin"),
+        updateUserStatus
+    );
 
 module.exports = router;

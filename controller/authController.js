@@ -4,6 +4,9 @@ const Role = require("../models/role");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
+
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
@@ -13,16 +16,11 @@ const generateToken = (payload) => {
     });
 };
 
-//  SIGNUP 
+// ===================== SIGNUP =====================
 const signup = catchAsync(async (req, res, next) => {
     const body = req.body;
 
-    if (!["1", "2"].includes(body.userType)) {
-        throw new AppError("Invalid user Type", 400);
-    }
-
     const newUser = await user.create({
-        userType: body.userType,
         firstName: body.firstName,
         lastName: body.lastName,
         email: body.email,
@@ -49,7 +47,8 @@ const signup = catchAsync(async (req, res, next) => {
     });
 });
 
-// LOGIN 
+// ===================== LOGIN =====================
+
 const login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
@@ -58,7 +57,9 @@ const login = catchAsync(async (req, res, next) => {
     }
 
     const result = await user.findOne({
-        where: { email },
+        where: {
+            email,
+        },
         include: [
             {
                 model: Role,
@@ -66,11 +67,74 @@ const login = catchAsync(async (req, res, next) => {
         ],
     });
 
-    if (!result || !(await bcrypt.compare(password, result.password))) {
+    // User not found
+    if (!result) {
         return next(new AppError("Incorrect email or password", 401));
     }
 
-    // Role not assigned
+    // Check if account is locked
+    if (
+        result.accountLockedUntil &&
+        result.accountLockedUntil > new Date()
+    ) {
+        return next(
+            new AppError(
+                "Your account is locked. Please try again after 10 minutes.",
+                403
+            )
+        );
+    }
+
+    // Wrong password
+    const isPasswordCorrect = await bcrypt.compare(
+        password,
+        result.password
+    );
+
+    if (!isPasswordCorrect) {
+    result.failedLoginAttempts += 1;
+    
+    // Lock account after 5 failed attempts
+    if (result.failedLoginAttempts >= 5) {
+        result.accountLockedUntil = new Date(
+            Date.now() + 10 * 60 * 1000
+        );
+
+        await sendEmail({
+            email: result.email,
+            subject: "Account Locked",
+            message: `Hello ${result.firstName},
+
+Your account has been locked because of 5 unsuccessful login attempts.
+
+Please try again after 10 minutes.
+
+Regards,
+Marcos Team`,
+        });
+
+        await result.save();
+
+        return next(
+            new AppError(
+                "Your account has been locked for 10 minutes due to 5 unsuccessful login attempts.",
+                403
+            )
+        );
+    }
+
+    await result.save();
+
+    return next(new AppError("Incorrect email or password", 401));
+}
+
+
+    // Reset failed attempts after successful login
+    result.failedLoginAttempts = 0;
+    result.accountLockedUntil = null;
+    await result.save();
+
+    // No role assigned
     if (!result.roleId) {
         return next(
             new AppError(
@@ -110,7 +174,124 @@ const login = catchAsync(async (req, res, next) => {
     });
 });
 
-//  AUTHENTICATION
+// ===================== FORGOT PASSWORD =====================
+const forgotPassword = catchAsync(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return next(new AppError("Please provide your email", 400));
+    }
+
+    const existingUser = await user.findOne({
+        where: {
+            email,
+        },
+    });
+
+    if (!existingUser) {
+        return next(new AppError("No user found with this email", 404));
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Store encrypted token
+    existingUser.passwordResetToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+
+    // Token expires in 15 minutes
+    existingUser.passwordResetExpires = new Date(
+        Date.now() + 15 * 60 * 1000
+    );
+
+    await existingUser.save();
+
+    // Reset URL
+    const resetURL = `http://localhost:3000/api/v1/auth/reset-password/${resetToken}`;
+
+    // Send Email
+    await sendEmail({
+        email: existingUser.email,
+        subject: "Password Reset Request",
+        message: `Hello ${existingUser.firstName},
+
+You requested to reset your password.
+
+Click the link below to reset it:
+
+${resetURL}
+
+This link will expire in 15 minutes.
+
+If you did not request this, please ignore this email.
+
+Regards,
+Marcos Team`,
+    });
+
+    return res.status(200).json({
+        status: "success",
+        message:
+            "Password reset link has been sent to your registered email.",
+    });
+});
+
+// ===================== RESET PASSWORD =====================
+const resetPassword = catchAsync(async (req, res, next) => {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+        return next(
+            new AppError(
+                "Please provide password and confirm password",
+                400
+            )
+        );
+    }
+
+    // Hash token received from URL
+    const hashedToken = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    // Find user with valid token
+    const existingUser = await user.findOne({
+        where: {
+            passwordResetToken: hashedToken,
+        },
+    });
+
+    if (!existingUser) {
+        return next(new AppError("Invalid reset token", 400));
+    }
+
+    // Check token expiry
+    if (existingUser.passwordResetExpires < new Date()) {
+        return next(new AppError("Reset token has expired", 400));
+    }
+
+    // Update password (confirmPassword setter will hash it)
+    existingUser.password = password;
+    existingUser.confirmPassword = confirmPassword;
+
+    // Clear reset fields
+    existingUser.passwordResetToken = null;
+    existingUser.passwordResetExpires = null;
+
+    await existingUser.save();
+
+    return res.status(200).json({
+        status: "success",
+        message: "Password has been reset successfully. Please login again.",
+    });
+});
+
+
+// ===================== AUTHENTICATION =====================
 const authentication = catchAsync(async (req, res, next) => {
     let idToken = "";
 
@@ -134,6 +315,12 @@ const authentication = catchAsync(async (req, res, next) => {
         attributes: {
             exclude: ["password", "deletedAt"],
         },
+        include: [
+            {
+                model: Role,
+                attributes: ["id", "roleName", "isActive"],
+            },
+        ],
     });
 
     if (!freshUser) {
@@ -145,10 +332,20 @@ const authentication = catchAsync(async (req, res, next) => {
     return next();
 });
 
-// AUTHORIZATION
-const restrictTo = (...userType) => {
+// ===================== ROLE AUTHORIZATION =====================
+const restrictToRole = (...roles) => {
     return (req, res, next) => {
-        if (!userType.includes(req.user.userType)) {
+
+        if (!req.user.role) {
+            return next(
+                new AppError(
+                    "No role assigned to this user",
+                    403
+                )
+            );
+        }
+
+        if (!roles.includes(req.user.role.roleName)) {
             return next(
                 new AppError(
                     "You don't have permission to perform this action",
@@ -164,6 +361,9 @@ const restrictTo = (...userType) => {
 module.exports = {
     signup,
     login,
+    forgotPassword,
+    resetPassword,
     authentication,
-    restrictTo,
+    restrictToRole,
 };
+

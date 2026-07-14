@@ -6,21 +6,16 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const sendEmail = require("../utils/sendEmail");
 
-//  GET ALL USERS 
+// ================= GET ALL USERS =================
 const getAllUser = catchAsync(async (req, res, next) => {
     const users = await user.findAndCountAll({
-        where: {
-            userType: {
-                [Op.ne]: "0",
-            },
-        },
         attributes: {
-            exclude: ["password", "deletedAt"],
+            exclude: ["password", "deletedAt", "roleId"],
         },
         include: [
             {
                 model: Role,
-                attributes: ["id", "roleName", "isActive"],
+                attributes: ["roleName", "isActive"],
             },
         ],
         order: [["createdAt", "DESC"]],
@@ -32,7 +27,7 @@ const getAllUser = catchAsync(async (req, res, next) => {
     });
 });
 
-//  ASSIGN ROLE 
+// ================= ASSIGN ROLE =================
 const assignRole = catchAsync(async (req, res, next) => {
     const userId = req.params.id;
     const { roleId, email } = req.body;
@@ -58,9 +53,12 @@ const assignRole = catchAsync(async (req, res, next) => {
     // Automatically activate user after role assignment
     existingUser.isActive = true;
 
+    // Save who assigned the role
+    existingUser.updatedBy = req.user.id;
+
     await existingUser.save();
 
-    //  SEND EMAIL 
+    // ================= SEND EMAIL =================
     await sendEmail({
         email: email || existingUser.email,
         subject: "Role Assigned Successfully",
@@ -90,7 +88,7 @@ Marcos Team`,
     });
 });
 
-//  UPDATE USER STATUS 
+// ================= UPDATE USER STATUS =================
 const updateUserStatus = catchAsync(async (req, res, next) => {
     const userId = req.params.id;
     const { isActive } = req.body;
@@ -106,6 +104,9 @@ const updateUserStatus = catchAsync(async (req, res, next) => {
     }
 
     existingUser.isActive = isActive;
+
+    // Save who updated the status
+    existingUser.updatedBy = req.user.id;
 
     await existingUser.save();
 

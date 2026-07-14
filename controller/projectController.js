@@ -26,6 +26,10 @@ const createProject = catchAsync(async (req, res, next) => {
         category: body.category,
         tags: body.tags,
         createdBy: userId,
+
+        // NEW
+        updatedBy: userId,
+
         slag: body.slag,
     });
 
@@ -173,6 +177,9 @@ const updateProject = catchAsync(async (req, res, next) => {
     result.category = body.category;
     result.tags = body.tags;
     result.slag = body.slag;
+
+    // NEW
+    result.updatedBy = userId;
 
     const updatedResult = await result.save();
 

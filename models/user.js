@@ -18,19 +18,6 @@ const user = sequelize.define(
             type: DataTypes.INTEGER,
         },
 
-        userType: {
-            type: DataTypes.ENUM('0', '1', '2'),
-            allowNull: false,
-            validate: {
-                notNull: {
-                    msg: 'userType cannot be null',
-                },
-                notEmpty: {
-                    msg: 'userType cannot be empty',
-                },
-            },
-        },
-
         roleId: {
             type: DataTypes.INTEGER,
             allowNull: true,
@@ -38,6 +25,38 @@ const user = sequelize.define(
                 model: 'role',
                 key: 'id',
             },
+        },
+
+        updatedBy: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'user',
+                key: 'id',
+            },
+        },
+
+        // ===== Forgot Password =====
+        passwordResetToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+
+        passwordResetExpires: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+
+        // ===== Login Lock =====
+        failedLoginAttempts: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        },
+
+        accountLockedUntil: {
+            type: DataTypes.DATE,
+            allowNull: true,
         },
 
         firstName: {
@@ -144,7 +163,7 @@ const user = sequelize.define(
     }
 );
 
-// User ↔ Project
+// ================= User ↔ Project =================
 user.hasMany(project, {
     foreignKey: 'createdBy',
 });
@@ -153,7 +172,7 @@ project.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// User ↔ Upload
+// ================= User ↔ Upload =================
 user.hasMany(upload, {
     foreignKey: 'createdBy',
 });
@@ -162,7 +181,7 @@ upload.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// Role ↔ User
+// ================= Role ↔ User =================
 role.hasMany(user, {
     foreignKey: 'roleId',
 });
