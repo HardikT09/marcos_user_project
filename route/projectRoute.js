@@ -14,7 +14,7 @@ const {
 
 const router = require("express").Router();
 
-// ================= PROJECT MANAGER =================
+//  PROJECT MANAGER 
 router
     .route("/")
     .post(
@@ -28,7 +28,7 @@ router
         getAllProject
     );
 
-// ================= ADMIN =================
+//  ADMIN 
 router
     .route("/all")
     .get(
@@ -37,7 +37,7 @@ router
         getAllProjectsForAdmin
     );
 
-// ================= PROJECT MANAGER =================
+//  PROJECT MANAGER 
 router
     .route("/:id")
     .get(

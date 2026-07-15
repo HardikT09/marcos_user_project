@@ -2,7 +2,7 @@ const Role = require("../models/role");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
-// ================= CREATE ROLE =================
+//  CREATE ROLE 
 const createRole = catchAsync(async (req, res, next) => {
     let { roleName } = req.body;
 
@@ -32,7 +32,7 @@ const createRole = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= GET ALL ROLES =================
+//  GET ALL ROLES 
 const getAllRoles = catchAsync(async (req, res) => {
     const roles = await Role.findAll({
         order: [["id", "ASC"]],
@@ -44,7 +44,7 @@ const getAllRoles = catchAsync(async (req, res) => {
     });
 });
 
-// ================= UPDATE ROLE =================
+//  UPDATE ROLE 
 const updateRole = catchAsync(async (req, res, next) => {
     const role = await Role.findByPk(req.params.id);
 

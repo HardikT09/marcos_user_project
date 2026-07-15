@@ -11,7 +11,7 @@ const {
     deleteCache,
 } = require("../utils/redisCache");
 
-// ================= CREATE PROJECT =================
+//  CREATE PROJECT 
 const createProject = catchAsync(async (req, res, next) => {
     const body = req.body;
     const userId = req.user.id;
@@ -44,7 +44,7 @@ const createProject = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= PROJECT MANAGER - OWN PROJECTS =================
+//  PROJECT MANAGER - OWN PROJECTS 
 const getAllProject = catchAsync(async (req, res, next) => {
     const userId = req.user.id;
 
@@ -93,7 +93,7 @@ const getAllProject = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= ADMIN - ALL PROJECTS =================
+//  ADMIN - ALL PROJECTS 
 const getAllProjectsForAdmin = catchAsync(async (req, res, next) => {
     const result = await project.findAll({
         include: [
@@ -120,7 +120,7 @@ const getAllProjectsForAdmin = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= GET PROJECT BY ID =================
+//  GET PROJECT BY ID 
 const getProjectById = catchAsync(async (req, res, next) => {
     const projectId = req.params.id;
 
@@ -151,7 +151,7 @@ const getProjectById = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= UPDATE PROJECT =================
+//  UPDATE PROJECT 
 const updateProject = catchAsync(async (req, res, next) => {
     const userId = req.user.id;
     const projectId = req.params.id;
@@ -194,7 +194,7 @@ const updateProject = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= DELETE PROJECT =================
+//  DELETE PROJECT 
 const deleteProject = catchAsync(async (req, res, next) => {
     const userId = req.user.id;
     const projectId = req.params.id;

@@ -7,6 +7,12 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
 
+const {
+    setResetToken,
+    getResetToken,
+    deleteResetToken,
+} = require("../utils/redisCache");
+
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
@@ -16,7 +22,7 @@ const generateToken = (payload) => {
     });
 };
 
-// ===================== SIGNUP =====================
+//  SIGNUP 
 const signup = catchAsync(async (req, res, next) => {
     const body = req.body;
 
@@ -47,7 +53,7 @@ const signup = catchAsync(async (req, res, next) => {
     });
 });
 
-// ===================== LOGIN =====================
+//  LOGIN 
 
 const login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
@@ -195,18 +201,8 @@ const forgotPassword = catchAsync(async (req, res, next) => {
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
-    // Store encrypted token
-    existingUser.passwordResetToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
-
-    // Token expires in 15 minutes
-    existingUser.passwordResetExpires = new Date(
-        Date.now() + 15 * 60 * 1000
-    );
-
-    await existingUser.save();
+    // Store token in Redis for 15 minutes
+    await setResetToken(resetToken, existingUser.id);
 
     // Reset URL
     const resetURL = `http://localhost:3000/api/v1/auth/reset-password/${resetToken}`;
@@ -223,7 +219,7 @@ Click the link below to reset it:
 
 ${resetURL}
 
-This link will expire in 15 minutes.
+This link will expire in 15 minutes and can only be used once.
 
 If you did not request this, please ignore this email.
 
@@ -233,12 +229,11 @@ Marcos Team`,
 
     return res.status(200).json({
         status: "success",
-        message:
-            "Password reset link has been sent to your registered email.",
+        message: "Password reset link has been sent to your registered email.",
     });
 });
 
-// ===================== RESET PASSWORD =====================
+//  RESET PASSWORD 
 const resetPassword = catchAsync(async (req, res, next) => {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
@@ -291,7 +286,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
 });
 
 
-// ===================== AUTHENTICATION =====================
+//  AUTHENTICATION 
 const authentication = catchAsync(async (req, res, next) => {
     let idToken = "";
 
@@ -332,7 +327,7 @@ const authentication = catchAsync(async (req, res, next) => {
     return next();
 });
 
-// ===================== ROLE AUTHORIZATION =====================
+//  ROLE AUTHORIZATION 
 const restrictToRole = (...roles) => {
     return (req, res, next) => {
 

@@ -36,7 +36,7 @@ const user = sequelize.define(
             },
         },
 
-        // ===== Forgot Password =====
+        //  Forgot Password 
         passwordResetToken: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -47,7 +47,7 @@ const user = sequelize.define(
             allowNull: true,
         },
 
-        // ===== Login Lock =====
+        //  Login Lock 
         failedLoginAttempts: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -163,7 +163,7 @@ const user = sequelize.define(
     }
 );
 
-// ================= User ↔ Project =================
+//  User to Project 
 user.hasMany(project, {
     foreignKey: 'createdBy',
 });
@@ -172,7 +172,7 @@ project.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// ================= User ↔ Upload =================
+//  User to Upload 
 user.hasMany(upload, {
     foreignKey: 'createdBy',
 });
@@ -181,7 +181,7 @@ upload.belongsTo(user, {
     foreignKey: 'createdBy',
 });
 
-// ================= Role ↔ User =================
+//  Role to User 
 role.hasMany(user, {
     foreignKey: 'roleId',
 });

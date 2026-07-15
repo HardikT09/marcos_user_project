@@ -11,7 +11,7 @@ const {
     updateUserStatus,
 } = require("../controller/userController");
 
-// ================= GET ALL USERS =================
+//  GET ALL USERS 
 // Admin and Super Admin can view users
 router
     .route("/")
@@ -21,7 +21,7 @@ router
         getAllUser
     );
 
-// ================= ASSIGN ROLE =================
+//  ASSIGN ROLE 
 // Only Super Admin can assign roles
 router
     .route("/:id/assign-role")
@@ -31,7 +31,7 @@ router
         assignRole
     );
 
-// ================= ACTIVATE / DEACTIVATE USER =================
+//  ACTIVATE / DEACTIVATE USER 
 // Only Super Admin can activate/deactivate users
 router
     .route("/:id/status")

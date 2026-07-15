@@ -6,7 +6,7 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const sendEmail = require("../utils/sendEmail");
 
-// ================= GET ALL USERS =================
+//  GET ALL USERS 
 const getAllUser = catchAsync(async (req, res, next) => {
     const users = await user.findAndCountAll({
         attributes: {
@@ -27,7 +27,7 @@ const getAllUser = catchAsync(async (req, res, next) => {
     });
 });
 
-// ================= ASSIGN ROLE =================
+//  ASSIGN ROLE 
 const assignRole = catchAsync(async (req, res, next) => {
     const userId = req.params.id;
     const { roleId, email } = req.body;
@@ -58,7 +58,7 @@ const assignRole = catchAsync(async (req, res, next) => {
 
     await existingUser.save();
 
-    // ================= SEND EMAIL =================
+    //  SEND EMAIL 
     await sendEmail({
         email: email || existingUser.email,
         subject: "Role Assigned Successfully",
@@ -88,7 +88,7 @@ Marcos Team`,
     });
 });
 
-// ================= UPDATE USER STATUS =================
+//  UPDATE USER STATUS 
 const updateUserStatus = catchAsync(async (req, res, next) => {
     const userId = req.params.id;
     const { isActive } = req.body;
