@@ -1,6 +1,9 @@
+
+const { Op } = require("sequelize");
 const project = require("../models/project");
 const user = require("../models/user");
 const Role = require("../models/role");
+
 
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
@@ -120,6 +123,64 @@ const getAllProjectsForAdmin = catchAsync(async (req, res, next) => {
     });
 });
 
+// SEARCH + FILTER + SORT PROJECTS
+const searchProjects = catchAsync(async (req, res, next) => {
+    const {
+        search,
+        category,
+        sort = "createdAt",
+        order = "DESC",
+    } = req.query;
+
+    const whereClause = {};
+
+    // Search
+    if (search) {
+        whereClause[Op.or] = [
+            {
+                title: {
+                    [Op.iLike]: `%${search}%`,
+                },
+            },
+            {
+                description: {
+                    [Op.iLike]: `%${search}%`,
+                },
+            },
+        ];
+    }
+
+    // Filter
+    if (category) {
+        whereClause.category = category;
+    }
+
+    const result = await project.findAll({
+        where: whereClause,
+        include: [
+            {
+                model: user,
+                attributes: {
+                    exclude: ["password", "deletedAt"],
+                },
+                include: [
+                    {
+                        model: Role,
+                        attributes: ["id", "roleName"],
+                    },
+                ],
+            },
+        ],
+        order: [[sort, order.toUpperCase()]],
+    });
+
+    return res.status(200).json({
+        status: "success",
+        totalProjects: result.length,
+        data: result,
+    });
+});
+
 //  GET PROJECT BY ID 
 const getProjectById = catchAsync(async (req, res, next) => {
     const projectId = req.params.id;
@@ -229,6 +290,7 @@ module.exports = {
     createProject,
     getAllProject,
     getAllProjectsForAdmin,
+    searchProjects,
     getProjectById,
     updateProject,
     deleteProject,

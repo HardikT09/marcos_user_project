@@ -10,11 +10,12 @@ const {
     getProjectById,
     updateProject,
     deleteProject,
+    searchProjects,
 } = require("../controller/projectController");
 
 const router = require("express").Router();
 
-//  PROJECT MANAGER 
+//  PROJECT MANAGER
 router
     .route("/")
     .post(
@@ -28,21 +29,34 @@ router
         getAllProject
     );
 
-//  ADMIN 
+//  SUPER ADMIN & ADMIN - GET ALL PROJECTS
 router
     .route("/all")
     .get(
         authentication,
-        restrictToRole("Super Admin","Admin"),
+        restrictToRole("Super Admin", "Admin"),
         getAllProjectsForAdmin
     );
 
-//  PROJECT MANAGER 
+//  SUPER ADMIN & ADMIN - SEARCH / FILTER / SORT PROJECTS
+router
+    .route("/search")
+    .get(
+        authentication,
+        restrictToRole("Super Admin", "Admin"),
+        searchProjects
+    );
+
+//  PROJECT DETAILS
 router
     .route("/:id")
     .get(
         authentication,
-        restrictToRole("Project Manager","Super Admin","Admin"),
+        restrictToRole(
+            "Project Manager",
+            "Super Admin",
+            "Admin"
+        ),
         getProjectById
     )
     .patch(
@@ -57,6 +71,3 @@ router
     );
 
 module.exports = router;
-
-
-
