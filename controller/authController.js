@@ -203,6 +203,8 @@ const forgotPassword = catchAsync(async (req, res, next) => {
 
     // Store token in Redis for 15 minutes
     await setResetToken(resetToken, existingUser.id);
+    console.log("Redis Token:", resetToken);
+    console.log("Redis UserId:", existingUser.id);
 
     // Reset URL
     const resetURL = `http://localhost:3000/api/v1/auth/reset-password/${resetToken}`;
@@ -233,7 +235,7 @@ Marcos Team`,
     });
 });
 
-//  RESET PASSWORD 
+// ===================== RESET PASSWORD =====================
 const resetPassword = catchAsync(async (req, res, next) => {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
@@ -247,44 +249,38 @@ const resetPassword = catchAsync(async (req, res, next) => {
         );
     }
 
-    // Hash token received from URL
-    const hashedToken = crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
+    // Get user id from Redis
+    const userId = await getResetToken(token);
 
-    // Find user with valid token
-    const existingUser = await user.findOne({
-        where: {
-            passwordResetToken: hashedToken,
-        },
-    });
+    if (!userId) {
+        return next(
+            new AppError(
+                "This password reset link has expired or has already been used.",
+                400
+            )
+        );
+    }
+
+    const existingUser = await user.findByPk(userId);
 
     if (!existingUser) {
-        return next(new AppError("Invalid reset token", 400));
+        return next(new AppError("User not found.", 404));
     }
 
-    // Check token expiry
-    if (existingUser.passwordResetExpires < new Date()) {
-        return next(new AppError("Reset token has expired", 400));
-    }
-
-    // Update password (confirmPassword setter will hash it)
+    // Update password
     existingUser.password = password;
     existingUser.confirmPassword = confirmPassword;
 
-    // Clear reset fields
-    existingUser.passwordResetToken = null;
-    existingUser.passwordResetExpires = null;
-
     await existingUser.save();
+
+    // Delete token from Redis (one-time use)
+    await deleteResetToken(token);
 
     return res.status(200).json({
         status: "success",
         message: "Password has been reset successfully. Please login again.",
     });
 });
-
 
 //  AUTHENTICATION 
 const authentication = catchAsync(async (req, res, next) => {

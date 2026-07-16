@@ -33,7 +33,7 @@ router
     .route("/all")
     .get(
         authentication,
-        restrictToRole("Admin"),
+        restrictToRole("Super Admin","Admin"),
         getAllProjectsForAdmin
     );
 
@@ -42,7 +42,7 @@ router
     .route("/:id")
     .get(
         authentication,
-        restrictToRole("Project Manager"),
+        restrictToRole("Project Manager","Super Admin","Admin"),
         getProjectById
     )
     .patch(
@@ -57,3 +57,6 @@ router
     );
 
 module.exports = router;
+
+
+

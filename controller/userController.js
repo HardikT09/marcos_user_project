@@ -11,11 +11,16 @@ const getAllUser = catchAsync(async (req, res, next) => {
     const users = await user.findAndCountAll({
         attributes: {
             exclude: ["password", "deletedAt", "roleId"],
-        },
-        include: [
+         },
+         include: [
             {
                 model: Role,
                 attributes: ["roleName", "isActive"],
+                where: {
+                    roleName: {
+                        [Op.ne]: "Super Admin",
+                    },
+                },
             },
         ],
         order: [["createdAt", "DESC"]],
