@@ -10,7 +10,6 @@ const {
     getProjectById,
     updateProject,
     deleteProject,
-    searchProjects,
 } = require("../controller/projectController");
 
 const router = require("express").Router();
@@ -38,14 +37,6 @@ router
         getAllProjectsForAdmin
     );
 
-//  SUPER ADMIN & ADMIN - SEARCH / FILTER / SORT PROJECTS
-router
-    .route("/search")
-    .get(
-        authentication,
-        restrictToRole("Super Admin", "Admin"),
-        searchProjects
-    );
 
 //  PROJECT DETAILS
 router

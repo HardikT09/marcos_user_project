@@ -3,6 +3,8 @@ const {
     login,
     forgotPassword,
     resetPassword,
+    refreshAccessToken,
+    logout,
 } = require("../controller/authController");
 
 const router = require("express").Router();
@@ -20,6 +22,16 @@ router.route("/forgot-password").post(forgotPassword);
 router
     .route("/reset-password/:token")
     .patch(resetPassword);
+
+// Refresh Token
+router
+    .route("/refresh-token")
+    .post(refreshAccessToken);
+
+// Logout
+router
+    .route("/logout")
+    .post(logout);
 
 module.exports = router;
 

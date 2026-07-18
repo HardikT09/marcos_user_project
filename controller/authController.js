@@ -11,6 +11,9 @@ const {
     setResetToken,
     getResetToken,
     deleteResetToken,
+    setRefreshToken,
+    getRefreshToken,
+    deleteRefreshToken,
 } = require("../utils/redisCache");
 
 const catchAsync = require("../utils/catchAsync");
@@ -19,6 +22,12 @@ const AppError = require("../utils/appError");
 const generateToken = (payload) => {
     return jwt.sign(payload, process.env.JWT_SECRET_KEY, {
         expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+};
+
+const generateRefreshToken = (payload) => {
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET_KEY, {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
     });
 };
 
@@ -78,7 +87,7 @@ const login = catchAsync(async (req, res, next) => {
         return next(new AppError("Incorrect email or password", 401));
     }
 
-    // Check if account is locked
+      // Check if account is locked
     if (
         result.accountLockedUntil &&
         result.accountLockedUntil > new Date()
@@ -98,18 +107,18 @@ const login = catchAsync(async (req, res, next) => {
     );
 
     if (!isPasswordCorrect) {
-    result.failedLoginAttempts += 1;
-    
-    // Lock account after 5 failed attempts
-    if (result.failedLoginAttempts >= 5) {
-        result.accountLockedUntil = new Date(
-            Date.now() + 10 * 60 * 1000
-        );
+        result.failedLoginAttempts += 1;
 
-        await sendEmail({
-            email: result.email,
-            subject: "Account Locked",
-            message: `Hello ${result.firstName},
+        // Lock account after 5 failed attempts
+        if (result.failedLoginAttempts >= 5) {
+            result.accountLockedUntil = new Date(
+                Date.now() + 10 * 60 * 1000
+            );
+
+            await sendEmail({
+                email: result.email,
+                subject: "Account Locked",
+                message: `Hello ${result.firstName},
 
 Your account has been locked because of 5 unsuccessful login attempts.
 
@@ -117,23 +126,24 @@ Please try again after 10 minutes.
 
 Regards,
 Marcos Team`,
-        });
+            });
+
+            await result.save();
+
+            return next(
+                new AppError(
+                    "Your account has been locked for 10 minutes due to 5 unsuccessful login attempts.",
+                    403
+                )
+            );
+        }
 
         await result.save();
 
         return next(
-            new AppError(
-                "Your account has been locked for 10 minutes due to 5 unsuccessful login attempts.",
-                403
-            )
+            new AppError("Incorrect email or password", 401)
         );
     }
-
-    await result.save();
-
-    return next(new AppError("Incorrect email or password", 401));
-}
-
 
     // Reset failed attempts after successful login
     result.failedLoginAttempts = 0;
@@ -170,13 +180,21 @@ Marcos Team`,
         );
     }
 
-    const token = generateToken({
+    const accessToken = generateToken({
         id: result.id,
     });
 
+    const refreshToken = generateRefreshToken({
+        id: result.id,
+    });
+
+    // Store refresh token in Redis
+    await setRefreshToken(refreshToken, result.id);
+
     return res.status(200).json({
         status: "success",
-        token,
+        accessToken,
+        refreshToken,
     });
 });
 
@@ -203,6 +221,7 @@ const forgotPassword = catchAsync(async (req, res, next) => {
 
     // Store token in Redis for 15 minutes
     await setResetToken(resetToken, existingUser.id);
+
     console.log("Redis Token:", resetToken);
     console.log("Redis UserId:", existingUser.id);
 
@@ -266,7 +285,6 @@ const resetPassword = catchAsync(async (req, res, next) => {
     if (!existingUser) {
         return next(new AppError("User not found.", 404));
     }
-
     // Update password
     existingUser.password = password;
     existingUser.confirmPassword = confirmPassword;
@@ -282,7 +300,61 @@ const resetPassword = catchAsync(async (req, res, next) => {
     });
 });
 
-//  AUTHENTICATION 
+// ===================== REFRESH ACCESS TOKEN =====================
+const refreshAccessToken = catchAsync(async (req, res, next) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return next(
+            new AppError("Please provide refresh token", 400)
+        );
+    }
+
+    // Check token in Redis
+    const storedToken = await getRefreshToken(refreshToken);
+
+    if (!storedToken) {
+        return next(
+            new AppError("Invalid or expired refresh token", 401)
+        );
+    }
+
+    // Verify JWT
+    const decoded = jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET_KEY
+    );
+
+    // Generate new access token
+    const accessToken = generateToken({
+        id: decoded.id,
+    });
+
+    return res.status(200).json({
+        status: "success",
+        accessToken,
+    });
+});
+
+// ===================== LOGOUT =====================
+const logout = catchAsync(async (req, res, next) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return next(
+            new AppError("Please provide refresh token", 400)
+        );
+    }
+
+    await deleteRefreshToken(refreshToken);
+
+    return res.status(200).json({
+        status: "success",
+        message: "Logged out successfully",
+    });
+});
+
+// ===================== AUTHENTICATION =====================
 const authentication = catchAsync(async (req, res, next) => {
     let idToken = "";
 
@@ -323,10 +395,9 @@ const authentication = catchAsync(async (req, res, next) => {
     return next();
 });
 
-//  ROLE AUTHORIZATION 
+// ===================== ROLE AUTHORIZATION =====================
 const restrictToRole = (...roles) => {
     return (req, res, next) => {
-
         if (!req.user.role) {
             return next(
                 new AppError(
@@ -352,9 +423,10 @@ const restrictToRole = (...roles) => {
 module.exports = {
     signup,
     login,
+    refreshAccessToken,
+    logout,
     forgotPassword,
     resetPassword,
     authentication,
     restrictToRole,
 };
-

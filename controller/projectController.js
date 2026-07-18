@@ -98,43 +98,17 @@ const getAllProject = catchAsync(async (req, res, next) => {
 
 //  ADMIN - ALL PROJECTS 
 const getAllProjectsForAdmin = catchAsync(async (req, res, next) => {
-    const result = await project.findAll({
-        include: [
-            {
-                model: user,
-                attributes: {
-                    exclude: ["password", "deletedAt"],
-                },
-                include: [
-                    {
-                        model: Role,
-                        attributes: ["id", "roleName"],
-                    },
-                ],
-            },
-        ],
-        order: [["createdAt", "DESC"]],
-    });
-
-    return res.status(200).json({
-        status: "success",
-        totalProjects: result.length,
-        data: result,
-    });
-});
-
-// SEARCH + FILTER + SORT PROJECTS
-const searchProjects = catchAsync(async (req, res, next) => {
     const {
         search,
         category,
         sort = "createdAt",
         order = "DESC",
+        page = 1,
+        limit = 5,
     } = req.query;
 
     const whereClause = {};
 
-    // Search
     if (search) {
         whereClause[Op.or] = [
             {
@@ -150,13 +124,24 @@ const searchProjects = catchAsync(async (req, res, next) => {
         ];
     }
 
-    // Filter
     if (category) {
         whereClause.category = category;
     }
 
+    const pageNumber = parseInt(page);
+    const pageLimit = parseInt(limit);
+    const offset = (pageNumber - 1) * pageLimit;
+
+    const totalProjects = await project.count({
+    where: whereClause,
+});
+
     const result = await project.findAll({
         where: whereClause,
+
+        limit: pageLimit,
+        offset: offset,
+
         include: [
             {
                 model: user,
@@ -173,10 +158,12 @@ const searchProjects = catchAsync(async (req, res, next) => {
         ],
         order: [[sort, order.toUpperCase()]],
     });
-
     return res.status(200).json({
         status: "success",
-        totalProjects: result.length,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalProjects / pageLimit),
+        totalProjects,
+        projectsPerPage: pageLimit,
         data: result,
     });
 });
@@ -290,7 +277,6 @@ module.exports = {
     createProject,
     getAllProject,
     getAllProjectsForAdmin,
-    searchProjects,
     getProjectById,
     updateProject,
     deleteProject,

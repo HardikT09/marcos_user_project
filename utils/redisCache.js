@@ -42,11 +42,34 @@ const deleteResetToken = async (token) => {
     await redisClient.del(`resetToken:${token}`);
 };
 
+// ================= REFRESH TOKEN =================
+
+const setRefreshToken = async (token, userId) => {
+    await redisClient.setEx(
+        `refreshToken:${token}`,
+        7 * 24 * 60 * 60, // 7 days
+        userId.toString()
+    );
+};
+
+const getRefreshToken = async (token) => {
+    return await redisClient.get(`refreshToken:${token}`);
+};
+
+const deleteRefreshToken = async (token) => {
+    await redisClient.del(`refreshToken:${token}`);
+};
+
 module.exports = {
     getCache,
     setCache,
     deleteCache,
+
     setResetToken,
     getResetToken,
     deleteResetToken,
+
+    setRefreshToken,
+    getRefreshToken,
+    deleteRefreshToken,
 };
