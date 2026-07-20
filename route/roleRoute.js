@@ -11,7 +11,7 @@ const {
     restrictToRole,
 } = require("../controller/authController");
 
-// ================= ROLE APIs =================
+//  ROLE APIs 
 
 // Only Super Admin can create and view roles
 router
